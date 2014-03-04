@@ -36,6 +36,8 @@ task main()
 	initializeRobot();
 
 	waitForStart(); // Wait for the beginning of autonomous phase.
+
+	wait1Msec(10000);
 	for(int i = 0; i < 3; i++){
 		motor[sweeper] = -76;
 		wait1Msec(380);

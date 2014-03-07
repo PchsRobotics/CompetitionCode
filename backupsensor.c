@@ -1,7 +1,7 @@
 #pragma config(Hubs,  S1, HTMotor,  HTMotor,  HTMotor,  HTMotor)
 #pragma config(Sensor, S2,     irF,            sensorHiTechnicIRSeeker1200)
 #pragma config(Sensor, S3,     lightF,         sensorLightActive)
-#pragma config(Sensor, S4,     irS,            sensorHiTechnicIRSeeker1200)
+#pragma config(Sensor, S4,     irR,            sensorHiTechnicIRSeeker1200)
 #pragma config(Motor,  mtr_S1_C1_1,     fr,            tmotorTetrix, openLoop, reversed)
 #pragma config(Motor,  mtr_S1_C1_2,     fl,            tmotorTetrix, openLoop, reversed)
 #pragma config(Motor,  mtr_S1_C2_1,     bl,            tmotorTetrix, openLoop, reversed)
@@ -21,7 +21,7 @@
 //#define lightL             msensor_S4_2
 //#define lightR          msensor_S4_3
 
-const int ON_TAPE = 440;
+const int ON_TAPE = 480;
 //const int OFF_TAPE = 450;
 
 
@@ -58,12 +58,113 @@ void liftUpAndDownAndTakeDump(){
 
 task updateDisplay(){
 	while(true){
-		nxtDisplayBigTextLine(1, "%d", SensorRaw[lightF]);
+		nxtDisplayTextLine(1, "%d" ,SensorRaw[lightF]);
+		nxtDisplayTextLine(2, "%d" ,SensorValue[irR]);
+		nxtDisplayTextLine(3, "%d" ,SensorValue[irF]);
+	}
+}
+
+void irify(){
+
+	PlaySound(soundBeepBeep);
+	motor[fr] = 0;
+	motor[fl] = 0;
+	motor[br] = 0;
+	motor[bl] = 0;
+	wait1Msec(1000);
+
+	motor[fr] = -13;
+	motor[fl] = -28;
+	motor[br] = -13;
+	motor[bl] = -28;
+
+	wait1Msec(300);
+
+	while(SensorValue[irF] != 5){
+		motor[fr] = -20;
+		motor[fl] = 20;
+		motor[br] = -20;
+		motor[bl] = 20;
+	}
+
+	while(SensorRaw[lightF]  <= ON_TAPE){
+		motor[fr] = 25;
+		motor[fl] = 25;
+		motor[br] = 25;
+		motor[bl] = 25;
+	}
+
+	while(SensorRaw[lightF]  >= ON_TAPE && false){
+		motor[fr] = 25;
+		motor[fl] = 25;
+		motor[br] = 25;
+		motor[bl] = 25;
+	}
+
+	motor[fr] = 0;
+	motor[fl] = 0;
+	motor[br] = 0;
+	motor[bl] = 0;
+
+	while(!(SensorRaw[lightF]  >= ON_TAPE && SensorValue[irF] == 5)){
+		PlaySound(soundBeepBeep);
+		motor[fr] = -15;
+		motor[fl] = 15;
+		motor[br] = -15;
+		motor[bl] = 15;
+	}
+
+	motor[fr] = 0;
+	motor[fl] = 0;
+	motor[br] = 0;
+	motor[bl] = 0;
+}
+
+bool tapeify(){
+	//while(false){
+	//drive forward until left light loses tape and scan for IR beacon
+
+	if(SensorRaw[lightF]  >= ON_TAPE){
+		motor[fr] = 13;
+		motor[fl] = 28;
+		motor[br] = 13;
+		motor[bl] = 28;
+	}
+	else{
+		ClearTimer(T1);
+		bool probablyOffTape = false;
+		int timeCorrection = 0;
+		while(SensorRaw[lightF]  <= ON_TAPE){
+			motor[fr] = 20;
+			motor[fl] = 0;
+			motor[br] = 20;
+			motor[bl] = 0;
+			if(time1[T1] > 300){
+				probablyOffTape = true;
+				break;
+			}
+		}
+		timeCorrection = time1[T1];
+		ClearTimer(T1);
+		while(time1[T1] < timeCorrection){
+			motor[fr] = 0;
+			motor[fl] = 20;
+			motor[br] = 0;
+			motor[bl] = 20;
+		}
+
+		if(probablyOffTape){
+			return false;
+		}
+		else{
+			return true;
+		}
 	}
 }
 
 task main()
 {
+	bool probablyOffTape = false;
 	initializeRobot();
 	//waitForStart();
 
@@ -74,53 +175,27 @@ task main()
 	StartTask(updateDisplay);
 
 	while(true){
-		//while(false){
-		//drive forward until left light loses tape and scan for IR beacon
-
-		if(SensorRaw[lightF]  >= ON_TAPE){
-			//if ir beacon is not in front of me drive right
-			motor[fr] = 13;
-			motor[fl] = 28;
-			motor[br] = 13;
-			motor[bl] = 28;
+		if(SensorValue[irR] == 5){
+			irify();
+			break;
 		}
 		else{
-			ClearTimer(T1);
-			bool probablyOffTape = false;
-			int timeCorrection = 0;
-			while(SensorRaw[lightF]  <= ON_TAPE){
-				motor[fr] = 20;
-				motor[fl] = 0;
-				motor[br] = 20;
-				motor[bl] = 0;
-				if(time1[T1] > 200){
-					probablyOffTape = true;
-					break;
-				}
-			}
-			timeCorrection = time1[T1];
-			ClearTimer(T1);
-			while(time1[T1] < timeCorrection){
-				motor[fr] = 0;
-				motor[fl] = 20;
-				motor[br] = 0;
-				motor[bl] = 20;
-			}
+			probablyOffTape = tapeify();
+		}
 
-			if(probablyOffTape){
-				break;
-			}
-
-			if(SensorValue[irS] == 3){
-				while(SensorValue[irF] != 5){
-					motor[fr] = -20;
-					motor[fl] = 20;
-					motor[br] = -20;
-					motor[bl] = 20;
-				}
-				PlaySound(soundBeepBeep);
-			}
+		if(probablyOffTape && false){
+			break;
 		}
 	}
+
+	motor[fr] = 0;
+	motor[fl] = 0;
+	motor[br] = 0;
+	motor[bl] = 0;
+
+	while(true){
+
+	}
+
 	PlaySound(soundBeepBeep);
 }

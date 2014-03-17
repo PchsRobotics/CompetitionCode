@@ -22,7 +22,7 @@
 #define backRightIR              msensor_S4_4
 
 const int FRONT_ON_TAPE = 480;
-const int BACK_ON_TAPE = 340;
+const int BACK_ON_TAPE = 490;
 
 
 bool tapeify();
@@ -50,15 +50,14 @@ void liftUp(){
 
 void takeDump(){
 	motor[holder] = -100;
-	wait1Msec(200);
+	wait1Msec(300);
 	motor[holder] = 0;
-	wait1Msec(600);
+	wait1Msec(500);
 	motor[holder] = 100;
 	wait1Msec(300);
 	motor[holder] = 0;
 	wait1Msec(300);
-	motor[holder] = -100;
-	wait1Msec(300) ;
+
 }
 
 task floooop(){
@@ -137,10 +136,46 @@ void liftUpAndDownAndTakeDumpAndForward(){
 }
 task updateDisplay(){
 	while(true){
-		nxtDisplayTextLine(1, "%d" ,SensorRaw[frontLight]);
+		nxtDisplayTextLine(1, "%d" ,SensorRaw[backLight]);
 		nxtDisplayTextLine(2, "%d" ,HTIRS2readACDir(backRightIR));
 		nxtDisplayTextLine(3, "%d" ,HTIRS2readACDir(frontRightIR));
 	}
+}
+
+void irify(){
+	PlaySound(soundBeepBeep);
+	motor[fr] = 0;
+	motor[fl] = 0;
+	motor[br] = 0;
+	motor[bl] = 0;
+	wait1Msec(1000);
+
+	while(HTIRS2readACDir(frontRightIR) > 1){
+		motor[fr] = -15;
+		motor[fl] = 15;
+		motor[br] = -15;
+		motor[bl] = 15;
+	}
+
+	StartTask(floooop);
+
+	while(SensorRaw[frontLight]  <= FRONT_ON_TAPE){
+		motor[fr] = 10;
+		motor[fl] = 12;
+		motor[br] = 10;
+		motor[bl] = 12;
+	}
+
+	StartTask(fleeeep);
+
+
+
+	motor[fr] = 0;
+	motor[fl] = 0;
+	motor[br] = 0;
+	motor[bl] = 0;
+
+	liftUpAndDownAndTakeDumpAndForward();
 }
 
 bool tapeify(){
@@ -149,12 +184,12 @@ bool tapeify(){
 
 	bool probablyOffTape = false;
 
-
 	if(SensorRaw[frontLight]  >= FRONT_ON_TAPE){
 		motor[fr] = 10;
 		motor[fl] = 15;
 		motor[br] = 10;
 		motor[bl] = 15;
+
 	}
 	else{
 		ClearTimer(T1);
@@ -177,55 +212,19 @@ bool tapeify(){
 			motor[br] = 0;
 			motor[bl] = 20;
 		}
-
 		return probablyOffTape;
 	}
-}
-void irify(){
-	PlaySound(soundBeepBeep);
-	motor[fr] = 0;
-	motor[fl] = 0;
-	motor[br] = 0;
-	motor[bl] = 0;
-	wait1Msec(1000);
-
-	while(HTIRS2readACDir(frontRightIR) > 1){
-		motor[fr] = -17;
-		motor[fl] = 17;
-		motor[br] = -17;
-		motor[bl] = 17;
-	}
-
-	StartTask(floooop);
-
-	while(SensorRaw[frontLight]  <= FRONT_ON_TAPE){
-		motor[fr] = 10;
-		motor[fl] = 12;
-		motor[br] = 10;
-		motor[bl] = 12;
-	}
-
-	StartTask(fleeeep);
-
-
-
-	motor[fr] = 0;
-	motor[fl] = 0;
-	motor[br] = 0;
-	motor[bl] = 0;
-
-	liftUpAndDownAndTakeDumpAndForward();
-
-
 }
 
 task main()
 {
 	bool probablyOffTape = false;
+	bool hasIrified = false;
 	initializeRobot();
 
 
 	motor[motorA] = -50;
+	motor[motorB] = 50;
 
 	wait1Msec(700);
 
@@ -244,14 +243,33 @@ task main()
 	motor[bl] = 0;
 
 
-
 	while(true){
 		if(HTIRS2readACDir(frontRightIR) == 5 && HTIRS2readACDir(backRightIR) == 9){
 			irify();
+			hasIrified = true;
 			break;
 		}
 		else{
 			probablyOffTape = tapeify();
+			if(probablyOffTape == true){
+				break;
+			}
+		}
+	}
+
+	if(!hasIrified){
+		while(true){
+			if(HTIRS2readACDir(frontRightIR) == 5 && HTIRS2readACDir(backRightIR) == 9){
+				irify();
+				hasIrified = true;
+				break;
+			}
+			else{
+				motor[fr] = -10;
+				motor[fl] = -15;
+				motor[br] = -10;
+				motor[bl] = -15;
+			}
 		}
 	}
 

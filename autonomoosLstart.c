@@ -236,14 +236,23 @@ task main()
 	}
 	}*/
 
-	//Drive forward until backRightIR reads 5 (time this)
+	//Drive forward until backRightIR reads 4 (time this)
 	ClearTimer(T1);
 	while(HTIRS2readACDir(backRightIR) != 5){
-		motor[fr] = 20;
-		motor[fl] = 21;
-		motor[br] = 20;
-		motor[bl] = 21;
+		motor[fr] = -16;
+		motor[fl] = -21;
+		motor[br] = -16;
+		motor[bl] = -21;
 	}
+
+	ClearTimer(T2);
+	while(time1[T2] < 1600){
+		motor[fr] = -15;
+		motor[fl] = -21;
+		motor[br] = -15;
+		motor[bl] = -21;
+	}
+
 	int bitchtits = time1[T1];
 	//End timer
 
@@ -255,15 +264,15 @@ task main()
 	wait1Msec(500);
 
 	//Turn time to go perpendicular to crates
-	int turntits = 1100;
+	int turntits = 1300;
 
 	//Turn for turntits ms
 	ClearTimer(T1);
 	while(time1[T1] < turntits){
-		motor[fr] = 30;
-		motor[fl] = -30;
-		motor[br] = 30;
-		motor[bl] = -30;
+		motor[fr] = -30;
+		motor[fl] = 30;
+		motor[br] = -30;
+		motor[bl] = 30;
 	}
 
 
@@ -273,7 +282,7 @@ task main()
 	StartTask(floooop);
 
 	//Drive forward to the blocks for turds ms
-	int turds = 600;
+	int turds = 550;
 
 	ClearTimer(T1);
 	while(time1[T1] < turds){
@@ -326,10 +335,10 @@ task main()
 
 	//back up 200 ms less than we went forward to get ir
 	ClearTimer(T1);
-	while(time1[T1] < bitchtits - 200){
-		motor[fr] = -20;
+	while(time1[T1] < bitchtits - 600){
+		motor[fr] = -15;
 		motor[fl] = -22;
-		motor[br] = -20;
+		motor[br] = -15;
 		motor[bl] = -22;
 	}
 
@@ -367,13 +376,12 @@ task main()
 
 	//Turn for certain ms to grab blocks
 	ClearTimer(T1);
-	while(time1[T1] < 1200){
+	while(time1[T1] < 1050){
 		motor[fr] = 30;
 		motor[fl] = -33;
 		motor[br] = 30;
 		motor[bl] = -33;
 	}
-
 	//lower block holder
 	ClearTimer(T1);
 	while(time1[T1] < 300){
@@ -423,7 +431,7 @@ task main()
 
 	//Turn to get onto ramp n shit
 	ClearTimer(T1);
-	while(time1[T1] < 720){
+	while(time1[T1] < 620){
 		motor[fr] = 30;
 		motor[fl] = -33;
 		motor[br] = 30;

@@ -1,6 +1,6 @@
 #pragma config(Hubs,  S1, HTMotor,  HTMotor,  HTMotor,  HTMotor)
-#pragma config(Sensor, S2,     frontLight,     sensorLightActive)
-#pragma config(Sensor, S3,     backLight,      sensorLightActive)
+#pragma config(Sensor, S2,     lightFR,        sensorLightActive)
+#pragma config(Sensor, S3,     lightFL,        sensorLightActive)
 #pragma config(Sensor, S4,     HTSMUX,         sensorI2CCustom)
 #pragma config(Motor,  mtr_S1_C1_1,     fr,            tmotorTetrix, openLoop, reversed)
 #pragma config(Motor,  mtr_S1_C1_2,     fl,            tmotorTetrix, openLoop, reversed)
@@ -21,9 +21,9 @@
 #define frontLeftIR              msensor_S4_2
 #define backRightIR              msensor_S4_4
 
-const int FRONT_ON_TAPE = 480;
+const int FRONT_ON_TAPE = 350;
 const int BACK_ON_TAPE = 340;
-
+int ontape = 340;
 
 bool tapeify();
 
@@ -49,27 +49,24 @@ void liftUp(){
 }
 
 void takeDump(){
-	motor[holder] = -100;
-	wait1Msec(200);
+	motor[holder] = -40;
+	wait1Msec(350);
 	motor[holder] = 0;
-	wait1Msec(600);
-	motor[holder] = 100;
-	wait1Msec(300);
-	motor[holder] = 0;
-	wait1Msec(300);
-	motor[holder] = -100;
-	wait1Msec(300) ;
+	wait1Msec(700);
+	motor[holder] = 40;
+	wait1Msec(249);
+	motor[holder]= 0;
 }
 
 task floooop(){
 	for(int i = 0; i < 20000; i++){
-		PlayTone(i, 2);
+		PlayTone(i, 5);
 	}
 }
 
 task fleeeep(){
 	for(int i = 20000; i > 20; i--){
-		PlayTone(i, 2);
+		PlayTone(i, 5);
 	}
 }
 
@@ -80,7 +77,7 @@ void liftUpAndDownAndTakeDumpAndForward(){
 	motor[br] = 25;
 	motor[bl] = 25;
 
-	wait10Msec(6);
+	wait10Msec(30);
 
 	motor[fr] = 0;
 	motor[fl] = 0;
@@ -89,47 +86,31 @@ void liftUpAndDownAndTakeDumpAndForward(){
 
 	motor[liftA] = 100;
 	motor[liftB] = 100;
-	wait1Msec(3100);
+	wait1Msec(2150);
 	motor[liftA] = 0;
 	motor[liftB] = 0;
 
 	takeDump();
-
-	motor[liftA] = -100;
-	motor[liftB] = -100;
-	wait1Msec(2900);
-	motor[liftA] = 0;
-	motor[liftB] = 0;
 
 	motor[fr] = -25;
 	motor[fl] = -25;
 	motor[br] = -25;
 	motor[bl] = -25;
 
-	wait10Msec(60);
+	wait10Msec(3);
+
+
 	motor[fr] = -0;
-	motor[fl] = 0;
-	motor[br] = -0;
-	motor[bl] = 0;
-	wait10Msec(30);
-	while(HTIRS2readACDir(backRightIR) != 5 && HTIRS2readACDir(frontRightIR) != 9){
-		motor[fr] = 17;
-		motor[fl] = -0;
-		motor[br] = 17;
-		motor[bl] = -17;
-
-	}
-	motor[fr] = 0;
 	motor[fl] = -0;
-	motor[br] = 0;
+	motor[br] = -0;
 	motor[bl] = -0;
-	while(SensorRaw[frontLight] >= FRONT_ON_TAPE){
-		motor[fr] = 34;
-		motor[fl] = 17;
-		motor[br] = 34;
-		motor[bl] = 17;
 
-	}
+	motor[liftA] = -100;
+	motor[liftB] = -100;
+	wait1Msec(1800);
+	motor[liftA] = 0;
+	motor[liftB] = 0;
+
 	motor[fr] = 0;
 	motor[fl] = -0;
 	motor[br] = 0;
@@ -137,9 +118,10 @@ void liftUpAndDownAndTakeDumpAndForward(){
 }
 task updateDisplay(){
 	while(true){
-		nxtDisplayTextLine(1, "%d" ,SensorRaw[frontLight]);
+		nxtDisplayTextLine(1, "%d" ,SensorRaw[lightFR]);
 		nxtDisplayTextLine(2, "%d" ,HTIRS2readACDir(backRightIR));
 		nxtDisplayTextLine(3, "%d" ,HTIRS2readACDir(frontRightIR));
+		nxtDisplayTextLine(4, "%d" ,USreadDist(sonicSensor));
 	}
 }
 
@@ -150,7 +132,7 @@ bool tapeify(){
 	bool probablyOffTape = false;
 
 
-	if(SensorRaw[frontLight]  >= FRONT_ON_TAPE){
+	if(SensorRaw[lightFR]  >= ontape){
 		motor[fr] = 10;
 		motor[fl] = 15;
 		motor[br] = 10;
@@ -159,7 +141,7 @@ bool tapeify(){
 	else{
 		ClearTimer(T1);
 		int timeCorrection = 0;
-		while(SensorRaw[frontLight]  <= FRONT_ON_TAPE){
+		while(SensorRaw[lightFR]  <= ontape){
 			motor[fr] = 20;
 			motor[fl] = 0;
 			motor[br] = 20;
@@ -189,20 +171,25 @@ void irify(){
 	motor[bl] = 0;
 	wait1Msec(1000);
 
-	while(HTIRS2readACDir(frontRightIR) > 1){
-		motor[fr] = -17;
-		motor[fl] = 17;
-		motor[br] = -17;
-		motor[bl] = 17;
+	//4 is an assnumber
+	//HTIRS2readACDir(frontLeftIR) > 4
+	ClearTimer(T1);
+	while(time1[T1] < 1700){
+		motor[fr] = -25;
+		motor[fl] = 25;
+		motor[br] = -25;
+		motor[bl] = 25;
 	}
+
+	int burptits = USreadDist(sonicSensor);
 
 	StartTask(floooop);
 
-	while(SensorRaw[frontLight]  <= FRONT_ON_TAPE){
-		motor[fr] = 10;
-		motor[fl] = 12;
-		motor[br] = 10;
-		motor[bl] = 12;
+	while(USreadDist(sonicSensor)   >22){
+		motor[fr] = 15;
+		motor[fl] = 20;
+		motor[br] = 15;
+		motor[bl] = 20;
 	}
 
 	StartTask(fleeeep);
@@ -217,6 +204,14 @@ void irify(){
 	liftUpAndDownAndTakeDumpAndForward();
 
 
+	//if while = -sqrt(true then) <false =int sound beepbeep, while motor(fl)= while then staet task 5falsel fleep probably off tape(x) true
+	ClearTimer(T1);
+	while(time1[T1] < 1700){
+		motor[fr] = 25;
+		motor[fl] = -25;
+		motor[br] = 25;
+		motor[bl] = -25;
+	}
 }
 
 task main()
@@ -231,11 +226,11 @@ task main()
 
 	StartTask(updateDisplay);
 	//waitForStart();
-	while(SensorRaw[frontLight]  <= FRONT_ON_TAPE){
-		motor[fr] = 10;
-		motor[fl] = 15;
-		motor[br] = 10;
-		motor[bl] = 15;
+	while(SensorRaw[lightFR]  <= ontape && false){
+		motor[fr] = 15;
+		motor[fl] = 20;
+		motor[br] = 15;
+		motor[bl] = 20;
 	}
 
 	motor[fr] = 0;
@@ -244,25 +239,180 @@ task main()
 	motor[bl] = 0;
 
 
-
-	while(true){
-		if(HTIRS2readACDir(frontRightIR) == 5 && HTIRS2readACDir(backRightIR) == 9){
-			irify();
-			break;
-		}
-		else{
-			probablyOffTape = tapeify();
-		}
+	/*while(true){
+	if(HTIRS2readACDir(frontRightIR) == 9 && HTIRS2readACDir(backRightIR) == 5){
+	irify();
+	break;
 	}
+	else{
+	probablyOffTape = tapeify();
+	}
+	}*/
+
+	ClearTimer(T1);
+	while(HTIRS2readACDir(backRightIR) != 5){
+		motor[fr] = 20;
+		motor[fl] = 21;
+		motor[br] = 20;
+		motor[bl] = 21;
+	}
+	int bitchtits = time1[T1];
+
+	motor[fr] = -0;
+	motor[fl] = 0;
+	motor[br] = -0;
+	motor[bl] = 0;
+
+	wait1Msec(500);
+
+	int turntits = 1300;
+
+	ClearTimer(T1);
+	while(time1[T1] < turntits){
+		motor[fr] = -30;
+		motor[fl] = 30;
+		motor[br] = -30;
+		motor[bl] = 30;
+	}
+
+
+
+	int tits = USreadDist(sonicSensor);
+
+	StartTask(floooop);
+
+	int turds = 620;
+
+	ClearTimer(T1);
+	while(time1[T1] < turds){
+		motor[fr] = 15;
+		motor[fl] = 22;
+		motor[br] = 15;
+		motor[bl] = 22;
+	}
+
+	StartTask(fleeeep);
+
+
 
 	motor[fr] = 0;
 	motor[fl] = 0;
 	motor[br] = 0;
 	motor[bl] = 0;
 
-	while(true){
+	liftUpAndDownAndTakeDumpAndForward();
 
+	ClearTimer(T1);
+	while(time1[T1] < turds){
+		motor[fr] = -15;
+		motor[fl] = -22;
+		motor[br] = -15;
+		motor[bl] = -22;
 	}
 
+	ClearTimer(T1);
+	while(time1[T1] < turntits - 200){
+		motor[fr] = 30;
+		motor[fl] = -30;
+		motor[br] = 30;
+		motor[bl] = -30;
+	}
+
+	ClearTimer(T1);
+	while(time1[T1] < bitchtits - 100){
+		motor[fr] = -20;
+		motor[fl] = -22;
+		motor[br] = -20;
+		motor[bl] = -22;
+	}
+
+	// im writing ofr yaaaa bbay
+
+	/*while(HTIRS2readACDir(backRightIR) != 5 && HTIRS2readACDir(frontRightIR) != 3){
+	if(SensorRaw[lightFR] > ontape && SensorRaw[lightFL] < ontape){
+	motor[fr] = 10;
+	motor[fl] = 15;
+	motor[br] = 10;
+	motor[bl] = 15;
+	}
+	else if(SensorRaw[lightFR] < ontape && SensorRaw[lightFL] > ontape){
+	motor[fl] = 10;
+	motor[fr] = 15;
+	motor[bl] = 10;
+	motor[br] = 15;
+
+
+	}
+	else{
+	motor[fr] = 10;
+	motor[fl] = 15;
+	motor[br] = 10;
+	motor[bl] = 15;
+
+	}
 	//	PlaySound(soundBeepBeep);
+	}*/
+
+	motor[fr] = 0;
+	motor[fl] = 0;
+	motor[br] = 0;
+	motor[bl] = 0;
+
+	ClearTimer(T1);
+	while(time1[T1] < 1650){
+		motor[fr] = -30;
+		motor[fl] = 33;
+		motor[br] = -30;
+		motor[bl] = 33;
+	}
+
+	ClearTimer(T1);
+	while(time1[T1] < 300){
+		motor[holder] = -15;
+	}
+
+	motor[holder] = -0;
+
+	ClearTimer(T1);
+	while(time1[T1] < 3100){
+		motor[fr] = 30;
+		motor[fl] = 33;
+		motor[br] = 30;
+		motor[bl] = 33;
+	}
+
+	motor[fr] = 0;
+	motor[fl] = 0;
+	motor[br] = 0;
+	motor[bl] = 0;
+
+	wait1Msec(70);
+
+	ClearTimer(T1);
+	while(time1[T1] < 280){
+		motor[holder] = 30;
+		motor[fr] = -30;
+		motor[fl] = -33;
+		motor[br] = -30;
+		motor[bl] = -33;
+	}
+
+	motor[holder] = -0;
+
+	ClearTimer(T1);
+	while(time1[T1] < 280){
+		motor[fr] = -30;
+		motor[fl] = 33;
+		motor[br] = -30;
+		motor[bl] = 33;
+	}
+
+	motor[fr] = 0;
+	motor[fl] = 0;
+	motor[br] = 0;
+	motor[bl] = 0;
+
+
+	while(true){}
+
 }

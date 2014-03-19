@@ -395,7 +395,6 @@ task main()
 	motor[fl] = 0;
 	motor[br] = 0;
 	motor[bl] = 0;
-
 	wait1Msec(70);
 
 	//raise holder while backing up

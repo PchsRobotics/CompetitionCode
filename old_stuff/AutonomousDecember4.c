@@ -25,15 +25,61 @@
 
 void initializeRobot()
 {
-  return;
+	return;
+}
+
+void spin(bool clockwise){
+	//spin (clockwise?)
+	if(clockwise){
+		motor[fr] = -100*speed;
+		motor[fl] = 100*speed;
+		motor[bl] = 100*speed ;
+		motor[br] = -100*speed;
+	}
+	//spin (counterclockwise?)
+	else{
+		motor[fr] = 100*speed;
+		motor[fl] = -100*speed;
+		motor[bl] = -100*speed ;
+		motor[br] = 100*speed;
+	}
+}
+
+void stopAll(){
+	motor[fr] = 0;
+	motor[fl] = 0;
+	motor[bl] = 0;
+	motor[br] = 0;
+}
+
+//x and y work like joystick values, -128 to 128
+//Uses timer T1 for driving
+void drive(int x, int y, float speed, int time){
+	x = x / 128.0 * 100 * speed;
+	y = y / 128.0 * 100 * speed;
+
+	clearTimer(T1);
+
+	motor[bl] = (-x + y);
+	motor[br] = (x + y);
+	motor[fr] = (-x + y);
+	motor[fl] = (x + y);
+	
+	while(time1[T1] < time){
+		
+	}
+	stopAll();
 }
 
 task main()
 {
-  initializeRobot();
+	initializeRobot();
 
-  waitForStart(); // Wait for the beginning of autonomous phase.
-  
-  while (true)
-  {}
+	waitForStart(); // Wait for the beginning of autonomous phase.
+
+	int x, y;
+
+	while (true)
+	{
+	}
 }
